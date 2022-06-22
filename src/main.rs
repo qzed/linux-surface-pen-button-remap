@@ -104,7 +104,7 @@ fn setup_uinput_device(config: &Config) -> Result<UInputDevice> {
         device.enable_event_code(&EventCode::EV_KEY(key), None)?;
     }
 
-    Ok(UInputDevice::create_from_device(&device)?)
+    UInputDevice::create_from_device(&device)
 }
 
 fn output_event(config: &Config, event: Event, output: &UInputDevice) -> Result<()> {
@@ -122,7 +122,7 @@ fn output_event(config: &Config, event: Event, output: &UInputDevice) -> Result<
     };
 
     for key in keys {
-        let evt = InputEvent::new(&event.time, &EventCode::EV_KEY(key.clone()), value);
+        let evt = InputEvent::new(&event.time, &EventCode::EV_KEY(*key), value);
         output.write_event(&evt)?;
     }
 
@@ -139,7 +139,7 @@ fn handle_event_batch(config: &Config, events: &[InputEvent], output: &UInputDev
         return Ok(());
     }
 
-    let time = events[0].time.clone();
+    let time = events[0].time;
     let meta = events.iter().find(|e| e.event_code == EventCode::EV_KEY(EV_KEY::KEY_LEFTMETA));
 
     if meta.is_none() {
@@ -163,7 +163,7 @@ fn handle_event_batch(config: &Config, events: &[InputEvent], output: &UInputDev
             continue
         };
 
-        let event = Event { time: time.clone(), ty, state };
+        let event = Event { time, ty, state };
         output_event(config, event, output)?;
     }
 
