@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::Result;
 use std::collections::HashSet;
 
-use evdev_rs::{Device, UInputDevice, GrabMode, ReadFlag, ReadStatus, TimeVal, InputEvent};
+use evdev_rs::{Device, DeviceWrapper, UInputDevice, GrabMode, ReadFlag, ReadStatus, TimeVal, InputEvent};
 use evdev_rs::enums::{EventCode, EV_KEY, EV_SYN};
 
 use nix::errno::Errno;
@@ -79,7 +79,7 @@ fn find_device(config: &Config) -> Result<Option<Device>> {
         let entry = entry.map_err(|e| e.into_error())?;
 
         let device = File::open(entry)?;
-        let device = Device::new_from_fd(device)?;
+        let device = Device::new_from_file(device)?;
 
         if match_device(config, &device) {
             return Ok(Some(device));
@@ -90,7 +90,7 @@ fn find_device(config: &Config) -> Result<Option<Device>> {
 }
 
 fn setup_uinput_device(config: &Config) -> Result<UInputDevice> {
-    let device = Device::new().unwrap();
+    let device = evdev_rs::UninitDevice::new().unwrap();
     device.set_name("Surface Pen Keyboard (mapped)");
     device.set_vendor_id(config.device.vendor_id as _);
     device.set_product_id(config.device.product_id as _);
@@ -193,10 +193,13 @@ fn handle_events(config: &Config, mut input: Device, output: UInputDevice) -> Re
                 _ => {},
             };
         },
-        Err(Errno::EAGAIN) => {
-            flags = ReadFlag::NORMAL | ReadFlag::BLOCKING;
-        },
-        Err(err) => return Err(err.into()),
+        Err(err) => {
+            if Errno::from_i32(err.raw_os_error().unwrap_or(0)) == Errno::EAGAIN {
+                flags = ReadFlag::NORMAL | ReadFlag::BLOCKING;
+            } else {
+                Err(err)?
+            }
+        }
     }}
 }
 
