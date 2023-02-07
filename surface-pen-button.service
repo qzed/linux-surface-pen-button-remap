@@ -1,0 +1,11 @@
+[Unit]
+Description=Surface Pen Bluetooth Button Mapping
+
+[Service]
+ExecStart=/usr/bin/surface-pen-button
+Restart=always
+RestartSec=2
+StartLimitIntervalSec=1
+
+[Install]
+WantedBy=multi-user.target
