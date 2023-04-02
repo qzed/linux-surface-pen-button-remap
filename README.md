@@ -13,10 +13,14 @@ For more hardware-details, have a look at the [official Windows specification pa
 
 [windows-spec]: https://docs.microsoft.com/en-us/windows-hardware/design/component-guidelines/windows-pen-designs#bluetooth-button-implimentation
 
-### Install
+### Install via shell script
 
-To install it you need cargo.
+Clone this repository and open it. Then run `chmod +x configure.sh && chmod +x install.sh && ./configure.sh` and follow the instructions. After configuring the actions, run `./install.sh` and follow the instructions.
 
-Clone the repository and open it. Then run `cargo build --release`  and copy the binary file to /usr/bin/ via `sudo cp ./target/release/surface-pen-button /usr/bin/` . Now you can start it via `sudo surface-pen-button`.
+### Install manually
+
+To install it you need cargo and libevdev-devel/libevdev-dev.
+
+Clone the repository and open it. Configure the actions in the file src/main.js in line 59-61. Then run `cargo build --release`  and copy the binary file to /usr/bin/ via `sudo cp ./target/release/surface-pen-button /usr/bin/` . Now you can start it via `sudo surface-pen-button`.
 
 If you want to install the systemd service which automatically starts on system startup and restarts when the Pen isn't connected until it's connected you have to copy the surface-pen-button.service file to /etc/systemd/system/ via `sudo cp surface-pen-button.service /etc/systemd/system/`. Then you have to run `sudo systemctl daemon-reload` and then to enable it at system startup `sudo systemctl enable --now surface-pen-button.service`.
