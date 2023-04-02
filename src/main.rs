@@ -1,6 +1,6 @@
+use anyhow::{Context, Result};
 use std::collections::HashSet;
 use std::fs::File;
-use std::io::Result;
 
 use evdev_rs::enums::{EventCode, EV_KEY, EV_SYN};
 use evdev_rs::{
@@ -8,6 +8,9 @@ use evdev_rs::{
 };
 
 use nix::errno::Errno;
+
+mod config;
+use config::Config;
 
 #[derive(Debug)]
 enum EventType {
@@ -29,43 +32,10 @@ struct Event {
     state: EventState,
 }
 
-#[derive(Debug)]
-struct Config {
-    device: DeviceMatch,
-    actions: Actions,
-}
-
-#[derive(Debug)]
-struct DeviceMatch {
-    vendor_id: u16,
-    product_id: u16,
-}
-
-#[derive(Debug)]
-struct Actions {
-    single: Vec<EV_KEY>,
-    double: Vec<EV_KEY>,
-    hold: Vec<EV_KEY>,
-}
-
-fn config() -> Config {
-    Config {
-        device: DeviceMatch {
-            vendor_id: 0x045e,
-            product_id: 0x0921,
-        },
-        actions: Actions {
-            single: vec![EV_KEY::KEY_RIGHT],
-            double: vec![EV_KEY::KEY_LEFT],
-            hold: vec![EV_KEY::KEY_LEFTCTRL, EV_KEY::KEY_Q],
-        },
-    }
-}
-
 fn match_device(config: &Config, device: &Device) -> bool {
     device.bustype() == 5 /* BUS_BLUETOOTH */ &&
-    device.vendor_id() == config.device.vendor_id as _ &&
-    device.product_id() == config.device.product_id as _ &&
+    device.vendor_id() == config.device.vendor as _ &&
+    device.product_id() == config.device.product as _ &&
     device.has(EventCode::EV_KEY(EV_KEY::KEY_LEFTMETA)) &&
     device.has(EventCode::EV_KEY(EV_KEY::KEY_F18)) &&
     device.has(EventCode::EV_KEY(EV_KEY::KEY_F19)) &&
@@ -90,8 +60,8 @@ fn find_device(config: &Config) -> Result<Option<Device>> {
 fn setup_uinput_device(config: &Config) -> Result<UInputDevice> {
     let device = evdev_rs::UninitDevice::new().unwrap();
     device.set_name("Surface Pen Keyboard (mapped)");
-    device.set_vendor_id(config.device.vendor_id as _);
-    device.set_product_id(config.device.product_id as _);
+    device.set_vendor_id(config.device.vendor as _);
+    device.set_product_id(config.device.product as _);
 
     let mut keys = HashSet::new();
     keys.extend(config.actions.single.iter().cloned());
@@ -102,7 +72,8 @@ fn setup_uinput_device(config: &Config) -> Result<UInputDevice> {
         device.enable_event_code(&EventCode::EV_KEY(key), None)?;
     }
 
-    UInputDevice::create_from_device(&device)
+    let device = UInputDevice::create_from_device(&device)?;
+    Ok(device)
 }
 
 fn output_event(config: &Config, event: Event, output: &UInputDevice) -> Result<()> {
@@ -206,12 +177,12 @@ fn handle_events(config: &Config, mut input: Device, output: UInputDevice) -> Re
 }
 
 fn main() -> Result<()> {
-    let config = config();
+    let config = config::load().context("Failed to load configuration file")?;
 
     if let Some(device) = find_device(&config)? {
         println!("Found device: '{}'", device.name().unwrap_or("<unknown>"));
         handle_events(&config, device, setup_uinput_device(&config)?)
     } else {
-        Err(std::io::ErrorKind::NotFound)?
+        anyhow::bail!("Device not found");
     }
 }
