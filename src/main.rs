@@ -66,10 +66,10 @@ fn match_device(config: &Config, device: &Device) -> bool {
     device.bustype() == 5 /* BUS_BLUETOOTH */ &&
     device.vendor_id() == config.device.vendor_id as _ &&
     device.product_id() == config.device.product_id as _ &&
-    device.has(&EventCode::EV_KEY(EV_KEY::KEY_LEFTMETA)) &&
-    device.has(&EventCode::EV_KEY(EV_KEY::KEY_F18)) &&
-    device.has(&EventCode::EV_KEY(EV_KEY::KEY_F19)) &&
-    device.has(&EventCode::EV_KEY(EV_KEY::KEY_F20))
+    device.has(EventCode::EV_KEY(EV_KEY::KEY_LEFTMETA)) &&
+    device.has(EventCode::EV_KEY(EV_KEY::KEY_F18)) &&
+    device.has(EventCode::EV_KEY(EV_KEY::KEY_F19)) &&
+    device.has(EventCode::EV_KEY(EV_KEY::KEY_F20))
 }
 
 fn find_device(config: &Config) -> Result<Option<Device>> {
