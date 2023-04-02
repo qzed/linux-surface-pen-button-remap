@@ -1,12 +1,13 @@
+use std::collections::HashSet;
 use std::fs::File;
 use std::io::Result;
-use std::collections::HashSet;
 
-use evdev_rs::{Device, DeviceWrapper, UInputDevice, GrabMode, ReadFlag, ReadStatus, TimeVal, InputEvent};
 use evdev_rs::enums::{EventCode, EV_KEY, EV_SYN};
+use evdev_rs::{
+    Device, DeviceWrapper, GrabMode, InputEvent, ReadFlag, ReadStatus, TimeVal, UInputDevice,
+};
 
 use nix::errno::Errno;
-
 
 #[derive(Debug)]
 enum EventType {
@@ -23,21 +24,20 @@ enum EventState {
 
 #[derive(Debug)]
 struct Event {
-    time:  TimeVal,
-    ty:    EventType,
+    time: TimeVal,
+    ty: EventType,
     state: EventState,
 }
 
-
 #[derive(Debug)]
 struct Config {
-    device:  DeviceMatch,
+    device: DeviceMatch,
     actions: Actions,
 }
 
 #[derive(Debug)]
 struct DeviceMatch {
-    vendor_id:  u16,
+    vendor_id: u16,
     product_id: u16,
 }
 
@@ -45,24 +45,22 @@ struct DeviceMatch {
 struct Actions {
     single: Vec<EV_KEY>,
     double: Vec<EV_KEY>,
-    hold:   Vec<EV_KEY>,
+    hold: Vec<EV_KEY>,
 }
-
 
 fn config() -> Config {
     Config {
         device: DeviceMatch {
-            vendor_id:  0x045e,
+            vendor_id: 0x045e,
             product_id: 0x0921,
         },
         actions: Actions {
             single: vec![EV_KEY::KEY_RIGHT],
             double: vec![EV_KEY::KEY_LEFT],
-            hold:   vec![EV_KEY::KEY_LEFTCTRL, EV_KEY::KEY_Q],
-        }
+            hold: vec![EV_KEY::KEY_LEFTCTRL, EV_KEY::KEY_Q],
+        },
     }
 }
-
 
 fn match_device(config: &Config, device: &Device) -> bool {
     device.bustype() == 5 /* BUS_BLUETOOTH */ &&
@@ -108,17 +106,17 @@ fn setup_uinput_device(config: &Config) -> Result<UInputDevice> {
 }
 
 fn output_event(config: &Config, event: Event, output: &UInputDevice) -> Result<()> {
-    println!("{:?}", event);    // TODO
+    println!("{:?}", event); // TODO
 
     let value = match event.state {
-        EventState::Pressed  => 1,
+        EventState::Pressed => 1,
         EventState::Released => 0,
     };
 
     let keys = match event.ty {
         EventType::Single => &config.actions.single,
         EventType::Double => &config.actions.double,
-        EventType::Hold   => &config.actions.hold,
+        EventType::Hold => &config.actions.hold,
     };
 
     for key in keys {
@@ -140,10 +138,12 @@ fn handle_event_batch(config: &Config, events: &[InputEvent], output: &UInputDev
     }
 
     let time = events[0].time;
-    let meta = events.iter().find(|e| e.event_code == EventCode::EV_KEY(EV_KEY::KEY_LEFTMETA));
+    let meta = events
+        .iter()
+        .find(|e| e.event_code == EventCode::EV_KEY(EV_KEY::KEY_LEFTMETA));
 
     if meta.is_none() {
-        return Ok(())
+        return Ok(());
     }
     let meta = meta.unwrap();
 
@@ -160,7 +160,7 @@ fn handle_event_batch(config: &Config, events: &[InputEvent], output: &UInputDev
         } else if meta.value == 0 && e.value == 0 {
             EventState::Released
         } else {
-            continue
+            continue;
         };
 
         let event = Event { time, ty, state };
@@ -175,32 +175,34 @@ fn handle_events(config: &Config, mut input: Device, output: UInputDevice) -> Re
 
     let mut events = Vec::with_capacity(4);
     let mut flags = ReadFlag::NORMAL | ReadFlag::BLOCKING;
-    loop { match input.next_event(flags) {
-        Ok((status, evt)) => {
-            flags = match status {
-                ReadStatus::Success => ReadFlag::NORMAL | ReadFlag::BLOCKING,
-                ReadStatus::Sync    => ReadFlag::SYNC,
-            };
+    loop {
+        match input.next_event(flags) {
+            Ok((status, evt)) => {
+                flags = match status {
+                    ReadStatus::Success => ReadFlag::NORMAL | ReadFlag::BLOCKING,
+                    ReadStatus::Sync => ReadFlag::SYNC,
+                };
 
-            match evt.event_code {
-                EventCode::EV_SYN(EV_SYN::SYN_REPORT) => {
-                    handle_event_batch(config, &events, &output)?;
-                    events.clear();
-                },
-                EventCode::EV_KEY(_) => {
-                    events.push(evt);
-                },
-                _ => {},
-            };
-        },
-        Err(err) => {
-            if Errno::from_i32(err.raw_os_error().unwrap_or(0)) == Errno::EAGAIN {
-                flags = ReadFlag::NORMAL | ReadFlag::BLOCKING;
-            } else {
-                Err(err)?
+                match evt.event_code {
+                    EventCode::EV_SYN(EV_SYN::SYN_REPORT) => {
+                        handle_event_batch(config, &events, &output)?;
+                        events.clear();
+                    }
+                    EventCode::EV_KEY(_) => {
+                        events.push(evt);
+                    }
+                    _ => {}
+                };
+            }
+            Err(err) => {
+                if Errno::from_i32(err.raw_os_error().unwrap_or(0)) == Errno::EAGAIN {
+                    flags = ReadFlag::NORMAL | ReadFlag::BLOCKING;
+                } else {
+                    Err(err)?
+                }
             }
         }
-    }}
+    }
 }
 
 fn main() -> Result<()> {
