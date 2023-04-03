@@ -5,6 +5,9 @@ authors = ["Maximilian Luz <luzmaximilian@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-evdev-rs = "0.5.0"
-nix = "0.24.1"
-glob = "0.3.0"
+evdev-rs = { version = "0.6.1", features = ["serde"] }
+nix = "0.26.2"
+glob = "0.3.1"
+serde = { version = "1.0.159", features = ["derive"] }
+toml = "0.7.3"
+anyhow = "1.0.70"
