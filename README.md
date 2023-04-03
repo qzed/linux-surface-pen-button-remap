@@ -146,7 +146,7 @@ KEY_F20
 
 </details>
 
-4) If you are configuring after installation: Stop this program via `sudo killall killall surface-pen-button`. If you have installed the systemd service, the program will start again after 2 seconds.
+4) If you are configuring after installation: Stop this program via `sudo killall surface-pen-button`. If you have installed the systemd service, the program will start again after 2 seconds.
   
 
 ### Install
