@@ -18,7 +18,8 @@ For more hardware-details, have a look at the [official Windows specification pa
 
 
 If you are configuring before installation: Open the file `remap.conf` in the folder `etc` and edit it:
-If you are configuring after nstallation: Open the file `remap.conf` in the folder `/etc/surface-pen-bluetooth/` and edit it:
+
+If you are configuring after installation: Open the file `remap.conf` in the folder `/etc/surface-pen-bluetooth/` and edit it:
 > The content of this file is toml syntax so keys are simple strings and actions are arrays of strings.
 1) Change `vendor` if neccessary. You can check the vendor id of your pen by using `sudo evtest` and then selecting `Surface Pen Keyboard`. You'll find you vendor id at `Input device ID` after `vendor`.
 2) Change `product` if neccessary. You can check the product id of your pen by using `sudo evtest` and then selecting `Surface Pen Keyboard`. You'll find you product id at `Input device ID` after `product`.
@@ -142,9 +143,11 @@ KEY_F18
 KEY_F19
 KEY_F20
 ```
-5) If you are configuring after installation: Stop this program via `sudo killall killall surface-pen-button`. If you have installed the systemd service, the program will start again after 2 seconds.
-  
+
 </details>
+
+4) If you are configuring after installation: Stop this program via `sudo killall killall surface-pen-button`. If you have installed the systemd service, the program will start again after 2 seconds.
+  
 
 ### Install
 
