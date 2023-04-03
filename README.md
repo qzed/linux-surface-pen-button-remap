@@ -143,8 +143,8 @@ KEY_F20
 
 ### Install
 
-Run `chmod +x install.sh && ./install.sh` in this repository, then follow the instructions.
+Run `./install.sh` in this repository, then follow the instructions.
 
 ### Uninstall
 
-Run `chmod +x uninstall.sh && ./uninstall.sh` in this repository.
+Run `./uninstall.sh` in this repository.
